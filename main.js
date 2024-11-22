@@ -1,46 +1,69 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { MapControls } from 'three/examples/jsm/controls/MapControls';
 
 let scene
 let camera
 let renderer
 let controls
-let torusKnot
+let box
 document.addEventListener("DOMContentLoaded", (event) => {
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222);
+    // scene
+    scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x222222)
 
+    // renderer
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    document.body.appendChild(renderer.domElement)
 
-    const geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-    const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    torusKnot = new THREE.Mesh(geometry, material);
-    scene.add(torusKnot);
+    // Box
+    const geometry = new THREE.BoxGeometry(1, 1, 1)
+    const material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+    box = new THREE.Mesh(geometry, material)
+    scene.add(box)
 
-    camera = new THREE.PerspectiveCamera(
-        75, // FOV
-        window.innerWidth / window.innerHeight, // Aspect ratio
-        0.1, // Near clipping plane
-        1000 // Far clipping plane
-    );
-    camera.position.set(0, 0, 5);
+    // 2D Camera
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    const frustumSize = 5; // Controls the visible area size
+    const [ left, right, top, bottom ] =
+        [
+            (-frustumSize * aspectRatio) / 2,
+            (frustumSize * aspectRatio) / 2,
+            frustumSize / 2,
+            -frustumSize / 2
+        ];
+    const [ near, far ] = [ 0.1, 1000 ]
+    camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far)
+    camera.position.set(0, 0, 5)
     scene.add(camera)
 
+    // Light attached to camera
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
     camera.add(light);
 
-    controls = new OrbitControls(camera, renderer.domElement);
+    // Pan/Zoom control
+    controls = new MapControls(camera, renderer.domElement);
+    controls.enableRotate = false;   // Disable rotation for 2D visualization
+    controls.screenSpacePanning = true; // Enable panning in screen space (x, y)
+    controls.zoomSpeed = 1.2
+    controls.panSpeed = 1;
 
     window.addEventListener('resize', () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        camera.aspect = window.innerWidth / window.innerHeight;
+
+        const aspect = window.innerWidth / window.innerHeight;
+        // Update camera frustum to match new aspect ratio
+        camera.left = (-frustumSize * aspect) / 2;
+        camera.right = (frustumSize * aspect) / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = -frustumSize / 2;
         camera.updateProjectionMatrix();
-    });
+
+        // Update renderer size
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    })
 
     animate();
 
