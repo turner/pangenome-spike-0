@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(renderer.domElement)
 
-    //
+    // Box
     const geometry = new THREE.BoxGeometry(1, 1, 1)
     const material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
     box = new THREE.Mesh(geometry, material)
@@ -40,19 +40,20 @@ document.addEventListener("DOMContentLoaded", (event) => {
     camera.position.set(0, 0, 5)
     scene.add(camera)
 
+    // Light attached to camera
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
     camera.add(light);
 
-    // 2D Control
+    // Pan/Zoom control
     controls = new MapControls(camera, renderer.domElement);
     controls.enableRotate = false;   // Disable rotation for 2D visualization
     controls.screenSpacePanning = true; // Enable panning in screen space (x, y)
-    controls.zoomSpeed = 1.2;
+    controls.zoomSpeed = 1.2
     controls.panSpeed = 1;
 
     window.addEventListener('resize', () => {
-        const aspect = window.innerWidth / window.innerHeight;
 
+        const aspect = window.innerWidth / window.innerHeight;
         // Update camera frustum to match new aspect ratio
         camera.left = (-frustumSize * aspect) / 2;
         camera.right = (frustumSize * aspect) / 2;
@@ -62,7 +63,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
         // Update renderer size
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    })
 
     animate();
 
