@@ -1,16 +1,13 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
+import { loadTexture, addBackgroundTexture } from './utils.js'
 
 let scene
 let camera
 let renderer
 let controls
 let box
-document.addEventListener("DOMContentLoaded", (event) => {
-
-    // scene
-    scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x222222)
+document.addEventListener("DOMContentLoaded", async (event) => {
 
     // renderer
     renderer = new THREE.WebGLRenderer();
@@ -18,6 +15,15 @@ document.addEventListener("DOMContentLoaded", (event) => {
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(renderer.domElement)
+
+    // scene
+    scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x222222)
+
+    // Add grid for context. Rotate to lie in x-y plane
+    const gridHelper = new THREE.GridHelper(20, 20)
+    gridHelper.rotation.x = Math.PI / 2
+    scene.add(gridHelper)
 
     // Box
     const geometry = new THREE.BoxGeometry(1, 1, 1)
@@ -42,7 +48,11 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     // Light attached to camera
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
-    camera.add(light);
+    camera.add(light)
+
+    const backgroundPlane = await addBackgroundTexture(scene, frustumSize, aspectRatio)
+    // scene.add(backgroundPlane)
+    camera.add(backgroundPlane)
 
     // Pan/Zoom control
     controls = new MapControls(camera, renderer.domElement);
@@ -51,18 +61,33 @@ document.addEventListener("DOMContentLoaded", (event) => {
     controls.zoomSpeed = 1.2
     controls.panSpeed = 1;
 
+    controls.addEventListener('change', () => {
+        const mesh = camera.children.find((child) => child.isMesh)
+        if (mesh) {
+            mesh.geometry.dispose()
+            const aspect = window.innerWidth / window.innerHeight
+            const effectiveFrustumSize = frustumSize / camera.zoom
+            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
+        }
+    });
+
     window.addEventListener('resize', () => {
 
         const aspect = window.innerWidth / window.innerHeight;
-        // Update camera frustum to match new aspect ratio
         camera.left = (-frustumSize * aspect) / 2;
         camera.right = (frustumSize * aspect) / 2;
         camera.top = frustumSize / 2;
         camera.bottom = -frustumSize / 2;
         camera.updateProjectionMatrix();
 
-        // Update renderer size
         renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const mesh = camera.children.find((child) => child.isMesh)
+        if (mesh) {
+            mesh.geometry.dispose()
+            const effectiveFrustumSize = frustumSize / camera.zoom
+            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
+        }
     })
 
     animate();
