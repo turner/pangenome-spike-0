@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
-import { addBackgroundTexture } from './utils/utils.js'
+import { updatePlaneGeometry, createCameraBackgroundPlane } from './utils/utils.js'
 
 let scene
 let camera
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     scene = new THREE.Scene()
     scene.background = new THREE.Color(0x222222)
 
-    // Add grid for context. Rotate to lie in x-y plane
+    //
     const gridHelper = new THREE.GridHelper(20, 20)
     gridHelper.rotation.x = Math.PI / 2
     scene.add(gridHelper)
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     box = new THREE.Mesh(geometry, material)
     scene.add(box)
 
-    // 2D Camera
+    // Orthographic Camera
     const aspectRatio = window.innerWidth / window.innerHeight;
     const frustumSize = 5; // Controls the visible area size
     const [ left, right, top, bottom ] =
@@ -44,17 +44,20 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     const [ near, far ] = [ 0.1, 1000 ]
     camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far)
     camera.position.set(0, 0, 5)
+
+    // Camera - attach to scene
     scene.add(camera)
 
-    // Light attached to camera
+    // Light - attach to camera
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
     camera.add(light)
 
-    const backgroundPlane = await addBackgroundTexture(scene, frustumSize, aspectRatio)
-    // scene.add(backgroundPlane)
+    // Backplane texture - attach to camera
+    const backgroundPlane = await createCameraBackgroundPlane(frustumSize, aspectRatio)
     camera.add(backgroundPlane)
 
-    // Pan/Zoom control
+
+    // Map Controls - for 2D pan/zoom interaction
     controls = new MapControls(camera, renderer.domElement);
     controls.enableRotate = false;   // Disable rotation for 2D visualization
     controls.screenSpacePanning = true; // Enable panning in screen space (x, y)
@@ -62,13 +65,8 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     controls.panSpeed = 1;
 
     controls.addEventListener('change', () => {
-        const mesh = camera.children.find((child) => child.isMesh)
-        if (mesh) {
-            mesh.geometry.dispose()
-            const aspect = window.innerWidth / window.innerHeight
-            const effectiveFrustumSize = frustumSize / camera.zoom
-            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
-        }
+        const plane = camera.children.find(child => 'PlaneGeometry' === child.type)
+        updatePlaneGeometry(plane, camera, frustumSize)
     });
 
     window.addEventListener('resize', () => {
@@ -82,12 +80,8 @@ document.addEventListener("DOMContentLoaded", async (event) => {
 
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const mesh = camera.children.find((child) => child.isMesh)
-        if (mesh) {
-            mesh.geometry.dispose()
-            const effectiveFrustumSize = frustumSize / camera.zoom
-            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
-        }
+        const plane = camera.children.find(child => 'PlaneGeometry' === child.type)
+        updatePlaneGeometry(plane, camera, frustumSize)
     })
 
     animate();

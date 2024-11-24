@@ -15,25 +15,33 @@ async function loadTexture(url) {
     });
 }
 
-async function addBackgroundTexture(scene, frustumSize, aspectRatio) {
+async function createCameraBackgroundPlane(frustumSize, aspectRatio) {
     try {
 
-        const texture = await loadTexture(texturePath)
-
-        // Create plane geometry that matches frustum size
+        // Plane geometry - match frustum size
         const geometry = new THREE.PlaneGeometry(frustumSize * aspectRatio, frustumSize)
 
+        // Textured material
+        const texture = await loadTexture(texturePath)
         const material = new THREE.MeshBasicMaterial({ map: texture, depthTest: false })
 
         const plane = new THREE.Mesh(geometry, material)
-        plane.position.z = -4; // Push it behind everything else
+        plane.position.z = -4; // Push plane behind everything else
         plane.renderOrder = -1;
 
         return plane
 
     } catch (error) {
-        console.error('Error loading texture:', error);
+        console.error('Error creating textured camera background:', error);
     }
 }
 
-export { loadTexture, addBackgroundTexture }
+function updatePlaneGeometry(plane, camera, frustumSize) {
+    if (plane) {
+        const aspect = window.innerWidth / window.innerHeight
+        const effectiveFrustumSize = frustumSize / camera.zoom
+        plane.geometry.dispose()
+        plane.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
+    }
+}
+export { updatePlaneGeometry, loadTexture, createCameraBackgroundPlane }
