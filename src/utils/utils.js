@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import texturePath from '../assets/noisey-thread-dense-multi-color.png';
 
 async function loadTexture(url) {
 
@@ -17,7 +18,7 @@ async function loadTexture(url) {
 async function addBackgroundTexture(scene, frustumSize, aspectRatio) {
     try {
 
-        const texture = await loadTexture('/texture/noisey-thread-dense-multi-color.png')
+        const texture = await loadTexture(texturePath)
 
         // Create plane geometry that matches frustum size
         const geometry = new THREE.PlaneGeometry(frustumSize * aspectRatio, frustumSize)

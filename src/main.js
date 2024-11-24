@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
-import { loadTexture, addBackgroundTexture } from './utils.js'
+import { addBackgroundTexture } from './utils/utils.js'
 
 let scene
 let camera
