@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
-import {createTexturedPlane, loadTexture, updatePlaneGeometry} from './utils/utils.js'
+import {loadTexture} from './utils/utils.js'
 import texturePath from "./assets/noisey-thread-dense-multi-color.png"
+import DioramaCamera from "./dioramaCamera.js"
 
 let scene
-let camera
+let dioramaCamera
 let renderer
 let controls
 let box
@@ -33,48 +34,29 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     scene.add(box)
 
     // 2D Camera
-    const aspectRatio = window.innerWidth / window.innerHeight;
-    const frustumSize = 5; // Controls the visible area size
-    const [ left, right, top, bottom ] =
-        [
-            (-frustumSize * aspectRatio) / 2,
-            (frustumSize * aspectRatio) / 2,
-            frustumSize / 2,
-            -frustumSize / 2
-        ];
-    const [ near, far ] = [ 0.1, 1000 ]
-    camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far)
-    camera.position.set(0, 0, 5)
-    scene.add(camera)
+    const frustumSize = 5
+    const texture = await loadTexture(texturePath)
+    dioramaCamera = new DioramaCamera(frustumSize, window.innerWidth/window.innerHeight, texture)
+    scene.add(dioramaCamera.camera)
 
     // Light attached to camera
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
-    camera.add(light)
-
-    // Add textured brackground to camera
-    const texture = await loadTexture(texturePath)
-    const texturedPlane = await createTexturedPlane(texture, frustumSize, aspectRatio)
-    camera.add(texturedPlane)
+    dioramaCamera.camera.add(light)
 
     // Pan/Zoom control
-    controls = new MapControls(camera, renderer.domElement);
+    controls = new MapControls(dioramaCamera.camera, renderer.domElement);
     controls.enableRotate = false;   // Disable rotation for 2D visualization
     controls.screenSpacePanning = true; // Enable panning in screen space (x, y)
     controls.zoomSpeed = 1.2
     controls.panSpeed = 1;
 
-    controls.addEventListener('change', () => updatePlaneGeometry(camera, frustumSize, window.innerWidth / window.innerHeight))
+    controls.addEventListener('change', () => dioramaCamera.updatePlaneGeometry(frustumSize, window.innerWidth/window.innerHeight))
 
     window.addEventListener('resize', () => {
 
-        const aspect = window.innerWidth / window.innerHeight;
-        camera.left = (-frustumSize * aspect) / 2;
-        camera.right = (frustumSize * aspect) / 2;
-        camera.top = frustumSize / 2;
-        camera.bottom = -frustumSize / 2;
-        camera.updateProjectionMatrix();
+        dioramaCamera.windowResizeHelper(frustumSize, window.innerWidth/window.innerHeight)
 
-        updatePlaneGeometry(camera, frustumSize, window.innerWidth / window.innerHeight)
+        dioramaCamera.updatePlaneGeometry(frustumSize, window.innerWidth/window.innerHeight)
 
         renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -87,6 +69,6 @@ document.addEventListener("DOMContentLoaded", async (event) => {
 function animate (){
     requestAnimationFrame(animate);
     controls.update();
-    renderer.render(scene, camera);
+    renderer.render(scene, dioramaCamera.camera);
 }
 
