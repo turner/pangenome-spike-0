@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls';
-import { addBackgroundTexture } from './utils/utils.js'
+import {createTexturedPlane, loadTexture, updatePlaneGeometry} from './utils/utils.js'
+import texturePath from "./assets/noisey-thread-dense-multi-color.png"
 
 let scene
 let camera
@@ -50,9 +51,10 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     const light = new THREE.PointLight(0xffffff, 2.5, 0, 0);
     camera.add(light)
 
-    const backgroundPlane = await addBackgroundTexture(scene, frustumSize, aspectRatio)
-    // scene.add(backgroundPlane)
-    camera.add(backgroundPlane)
+    // Add textured brackground to camera
+    const texture = await loadTexture(texturePath)
+    const texturedPlane = await createTexturedPlane(texture, frustumSize, aspectRatio)
+    camera.add(texturedPlane)
 
     // Pan/Zoom control
     controls = new MapControls(camera, renderer.domElement);
@@ -61,15 +63,7 @@ document.addEventListener("DOMContentLoaded", async (event) => {
     controls.zoomSpeed = 1.2
     controls.panSpeed = 1;
 
-    controls.addEventListener('change', () => {
-        const mesh = camera.children.find((child) => child.isMesh)
-        if (mesh) {
-            mesh.geometry.dispose()
-            const aspect = window.innerWidth / window.innerHeight
-            const effectiveFrustumSize = frustumSize / camera.zoom
-            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
-        }
-    });
+    controls.addEventListener('change', () => updatePlaneGeometry(camera, frustumSize, window.innerWidth / window.innerHeight))
 
     window.addEventListener('resize', () => {
 
@@ -80,14 +74,10 @@ document.addEventListener("DOMContentLoaded", async (event) => {
         camera.bottom = -frustumSize / 2;
         camera.updateProjectionMatrix();
 
+        updatePlaneGeometry(camera, frustumSize, window.innerWidth / window.innerHeight)
+
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const mesh = camera.children.find((child) => child.isMesh)
-        if (mesh) {
-            mesh.geometry.dispose()
-            const effectiveFrustumSize = frustumSize / camera.zoom
-            mesh.geometry = new THREE.PlaneGeometry(effectiveFrustumSize * aspect, effectiveFrustumSize);
-        }
     })
 
     animate();
